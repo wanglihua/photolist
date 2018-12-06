@@ -6,6 +6,7 @@ import (
 	"github.com/go-ini/ini"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -74,7 +75,8 @@ func main() {
 func isNameInPhotoFileList(name string, photoFileList []string) bool {
 
 	for _, photoFile := range photoFileList {
-		if strings.ToUpper(strings.TrimSpace(name)) == strings.ToUpper(strings.TrimSpace(photoFile)) {
+		var fileNameWithoutExt = strings.TrimSuffix(photoFile, path.Ext(photoFile))
+		if strings.ToUpper(strings.TrimSpace(name)) == strings.ToUpper(strings.TrimSpace(fileNameWithoutExt)) {
 			return true
 		}
 	}
