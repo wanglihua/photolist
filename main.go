@@ -71,6 +71,11 @@ func main() {
 			xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
 		}
 	}
+
+	err = xlsx.Save()
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func isNameInPhotoFileList(name string, photoFileList []string) bool {
@@ -104,6 +109,10 @@ func pathExists(path string) bool {
 func getPhotoFileList(photoDir string) []string {
 
 	file_list, _ := filepath.Glob(photoDir + string(os.PathSeparator) + "*.*")
+
+	for i := 0; i < len(file_list); i++ {
+		file_list[i] = filepath.Base(file_list[i])
+	}
 
 	var fileNameList = FileNameList(file_list)
 	// sort.Sort(sort.Reverse(fileNameList))
