@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -50,6 +51,8 @@ func main() {
 	var excelRemarkCol = INI_FILE.Section("").Key("excel_remark_col").String()
 	var remarkText = INI_FILE.Section("").Key("remark_text").String()
 
+	remarkInt, errRemarkInt := strconv.ParseInt(remarkText, 10, 64)
+
 	// get photo file list
 	var photoFileList = getPhotoFileList(photoDir)
 
@@ -68,7 +71,11 @@ func main() {
 		var photoNameCellValue = xlsx.GetCellValue(excelSheetName, photoNameCellName)
 
 		if isNameInPhotoFileList(photoNameCellValue, photoFileList) {
-			xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
+			if errRemarkInt != nil { // 是文本
+				xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
+			} else { // 是数字
+				xlsx.SetCellInt(excelSheetName, remarkCellName, int(remarkInt))
+			}
 		}
 	}
 
