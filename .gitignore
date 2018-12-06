@@ -1,0 +1,12 @@
+*.exe
+*.exe~
+.idea
+.svn
+.vscode
+test-results/
+/log
+/*.db
+/static/upload
+\#*\#
+*~
+~*
