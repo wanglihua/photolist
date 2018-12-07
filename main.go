@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -57,11 +58,11 @@ func main() {
 
 	var photoFileMap = make(map[string]bool)
 	for _, photoFile := range photoFileList {
-		photoFile = strings.TrimSuffix(photoFile, path.Ext(photoFile))
-		photoFile = strings.TrimSpace(photoFile)
-		photoFile = strings.ToUpper(photoFile)
+		var photoFileKey = strings.TrimSuffix(photoFile, path.Ext(photoFile))
+		photoFileKey = strings.TrimSpace(photoFileKey)
+		photoFileKey = strings.ToUpper(photoFileKey)
 
-		photoFileMap[photoFile] = true
+		photoFileMap[photoFileKey] = false
 	}
 
 	xlsx, err := excelize.OpenFile(excelFile)
@@ -69,12 +70,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	var resultSheetName = createResultSheet(xlsx)
-	var resultFoundCellNum = 2;
-	xlsx.SetCellStr(resultSheetName, "A1", "已找到")
-	var resultNotFoundCellNum = 2;
-	xlsx.SetCellStr(resultSheetName, "B1", "未找到")
 
 	rows := xlsx.GetRows(excelSheetName)
 	for index, _ := range rows {
@@ -92,6 +87,7 @@ func main() {
 		_, photoFileExist := photoFileMap[photoNameCellValue]
 		//设置标记
 		if photoFileExist == true {
+			photoFileMap[photoNameCellValue] = true
 			if errRemarkInt != nil { // 是文本
 				xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
 			} else { // 是数字
@@ -99,12 +95,26 @@ func main() {
 			}
 		}
 
+	}
+
+	var resultSheetName = createResultSheet(xlsx)
+	var resultFoundCellNum = 2;
+	xlsx.SetCellStr(resultSheetName, "A1", "已找到")
+	var resultNotFoundCellNum = 2;
+	xlsx.SetCellStr(resultSheetName, "B1", "未找到")
+
+	for _, photoFile := range photoFileList {
+		var photoFileKey = strings.TrimSuffix(photoFile, path.Ext(photoFile))
+		photoFileKey = strings.TrimSpace(photoFileKey)
+		photoFileKey = strings.ToUpper(photoFileKey)
+
+		var photoFileExist = photoFileMap[photoFileKey]
 		// 输出结果
-		if photoFileExist == true {
-			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("A%d", resultFoundCellNum), photoNameCellValue)
+		if photoFileExist {
+			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("A%d", resultFoundCellNum), photoFile)
 			resultFoundCellNum = resultFoundCellNum + 1
 		} else {
-			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("B%d", resultNotFoundCellNum), photoNameCellValue)
+			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("B%d", resultNotFoundCellNum), photoFile)
 			resultNotFoundCellNum = resultNotFoundCellNum + 1
 		}
 	}
@@ -133,13 +143,33 @@ func pathExists(path string) bool {
 
 func getPhotoFileList(photoDir string) []string {
 
-	file_list, _ := filepath.Glob(photoDir + string(os.PathSeparator) + "*.*")
+	fileList, _ := filepath.Glob(photoDir + string(os.PathSeparator) + "*.*")
 
-	for i := 0; i < len(file_list); i++ {
-		file_list[i] = filepath.Base(file_list[i])
+	for i := 0; i < len(fileList); i++ {
+		fileList[i] = filepath.Base(fileList[i])
 	}
 
-	return file_list
+	var fileNameList = FileNameList(fileList)
+	// sort.Sort(sort.Reverse(fileNameList))
+	sort.Sort(fileNameList)
+
+	fileList = []string(fileNameList)
+
+	return fileList
+}
+
+type FileNameList []string
+
+func (fileNameList FileNameList) Len() int {
+	return len(fileNameList)
+}
+
+func (fileNameList FileNameList) Less(i, j int) bool {
+	return fileNameList[i] < fileNameList[j]
+}
+
+func (fileNameList FileNameList) Swap(i, j int) {
+	fileNameList[i], fileNameList[j] = fileNameList[j], fileNameList[i]
 }
 
 func createResultSheet(xlsx *excelize.File) string {
