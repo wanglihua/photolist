@@ -70,9 +70,18 @@ func main() {
 		return
 	}
 
-	// Get all the rows in the Sheet1.
+	var resultSheetName = createResultSheet(xlsx)
+	var resultFoundCellNum = 2;
+	xlsx.SetCellStr(resultSheetName, "A1", "已找到")
+	var resultNotFoundCellNum = 2;
+	xlsx.SetCellStr(resultSheetName, "B1", "未找到")
+
 	rows := xlsx.GetRows(excelSheetName)
 	for index, _ := range rows {
+		if index == 0 { // 略过标题行
+			continue
+		}
+
 		var photoNameCellName = fmt.Sprintf("%s%d", excelPhotoNameCol, index+1)
 		var remarkCellName = fmt.Sprintf("%s%d", excelRemarkCol, index+1)
 
@@ -81,12 +90,22 @@ func main() {
 		photoNameCellValue = strings.ToUpper(photoNameCellValue)
 
 		_, photoFileExist := photoFileMap[photoNameCellValue]
+		//设置标记
 		if photoFileExist == true {
 			if errRemarkInt != nil { // 是文本
 				xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
 			} else { // 是数字
 				xlsx.SetCellInt(excelSheetName, remarkCellName, int(remarkInt))
 			}
+		}
+
+		// 输出结果
+		if photoFileExist == true {
+			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("A%d", resultFoundCellNum), photoNameCellValue)
+			resultFoundCellNum = resultFoundCellNum + 1
+		} else {
+			xlsx.SetCellStr(resultSheetName, fmt.Sprintf("B%d", resultNotFoundCellNum), photoNameCellValue)
+			resultNotFoundCellNum = resultNotFoundCellNum + 1
 		}
 	}
 
@@ -95,7 +114,6 @@ func main() {
 		fmt.Println(err)
 	}
 }
-
 
 func pathExists(path string) bool {
 	_, err := os.Stat(path)
@@ -122,4 +140,30 @@ func getPhotoFileList(photoDir string) []string {
 	}
 
 	return file_list
+}
+
+func createResultSheet(xlsx *excelize.File) string {
+	var sheetNameMap = make(map[string]bool)
+	for _, name := range xlsx.GetSheetMap() {
+		sheetNameMap[name] = true
+	}
+
+	var sheetNameBase = "查找结果"
+
+	_, found := sheetNameMap[sheetNameBase]
+	if !found {
+		xlsx.NewSheet(sheetNameBase)
+		return sheetNameBase
+	}
+
+	for i := 2; i < 100; i ++ {
+		var resultSheetName = fmt.Sprintf("%s%d", sheetNameBase, i)
+		_, found := sheetNameMap[resultSheetName]
+		if !found {
+			xlsx.NewSheet(resultSheetName)
+			return resultSheetName
+		}
+	}
+
+	return sheetNameBase
 }
