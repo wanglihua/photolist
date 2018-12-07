@@ -58,10 +58,7 @@ func main() {
 
 	var photoFileMap = make(map[string]bool)
 	for _, photoFile := range photoFileList {
-		var photoFileKey = strings.TrimSuffix(photoFile, path.Ext(photoFile))
-		photoFileKey = strings.TrimSpace(photoFileKey)
-		photoFileKey = strings.ToUpper(photoFileKey)
-
+		var photoFileKey = getPhotoFileKey(photoFile)
 		photoFileMap[photoFileKey] = false
 	}
 
@@ -104,9 +101,7 @@ func main() {
 	xlsx.SetCellStr(resultSheetName, "B1", "未找到")
 
 	for _, photoFile := range photoFileList {
-		var photoFileKey = strings.TrimSuffix(photoFile, path.Ext(photoFile))
-		photoFileKey = strings.TrimSpace(photoFileKey)
-		photoFileKey = strings.ToUpper(photoFileKey)
+		var photoFileKey = getPhotoFileKey(photoFile)
 
 		var photoFileExist = photoFileMap[photoFileKey]
 		// 输出结果
@@ -123,6 +118,14 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func getPhotoFileKey(photoFile string) string {
+	var photoFileKey = strings.TrimSuffix(photoFile, path.Ext(photoFile))
+	photoFileKey = strings.TrimSpace(photoFileKey)
+	photoFileKey = strings.ToUpper(photoFileKey)
+
+	return photoFileKey
 }
 
 func pathExists(path string) bool {
