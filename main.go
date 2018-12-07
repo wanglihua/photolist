@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -56,6 +55,15 @@ func main() {
 	// get photo file list
 	var photoFileList = getPhotoFileList(photoDir)
 
+	var photoFileMap = make(map[string]bool)
+	for _, photoFile := range photoFileList {
+		photoFile = strings.TrimSuffix(photoFile, path.Ext(photoFile))
+		photoFile = strings.TrimSpace(photoFile)
+		photoFile = strings.ToUpper(photoFile)
+
+		photoFileMap[photoFile] = true
+	}
+
 	xlsx, err := excelize.OpenFile(excelFile)
 	if err != nil {
 		fmt.Println(err)
@@ -69,8 +77,11 @@ func main() {
 		var remarkCellName = fmt.Sprintf("%s%d", excelRemarkCol, index+1)
 
 		var photoNameCellValue = xlsx.GetCellValue(excelSheetName, photoNameCellName)
+		photoNameCellValue = strings.TrimSpace(photoNameCellValue)
+		photoNameCellValue = strings.ToUpper(photoNameCellValue)
 
-		if isNameInPhotoFileList(photoNameCellValue, photoFileList) {
+		_, photoFileExist := photoFileMap[photoNameCellValue]
+		if photoFileExist == true {
 			if errRemarkInt != nil { // 是文本
 				xlsx.SetCellStr(excelSheetName, remarkCellName, remarkText)
 			} else { // 是数字
@@ -85,17 +96,6 @@ func main() {
 	}
 }
 
-func isNameInPhotoFileList(name string, photoFileList []string) bool {
-
-	for _, photoFile := range photoFileList {
-		var fileNameWithoutExt = strings.TrimSuffix(photoFile, path.Ext(photoFile))
-		if strings.ToUpper(strings.TrimSpace(name)) == strings.ToUpper(strings.TrimSpace(fileNameWithoutExt)) {
-			return true
-		}
-	}
-
-	return false
-}
 
 func pathExists(path string) bool {
 	_, err := os.Stat(path)
@@ -121,25 +121,5 @@ func getPhotoFileList(photoDir string) []string {
 		file_list[i] = filepath.Base(file_list[i])
 	}
 
-	var fileNameList = FileNameList(file_list)
-	// sort.Sort(sort.Reverse(fileNameList))
-	sort.Sort(fileNameList)
-
-	file_list = []string(fileNameList)
-
 	return file_list
-}
-
-type FileNameList []string
-
-func (fileNameList FileNameList) Len() int {
-	return len(fileNameList)
-}
-
-func (fileNameList FileNameList) Less(i, j int) bool {
-	return fileNameList[i] < fileNameList[j]
-}
-
-func (fileNameList FileNameList) Swap(i, j int) {
-	fileNameList[i], fileNameList[j] = fileNameList[j], fileNameList[i]
 }
